@@ -18,8 +18,9 @@ The goals / steps of this project are the following:
 [image2]: ./writeup/cal_original.png "Uncalibrated"
 [image3]: ./writeup/test_image_undistortion.png "Test Image Undistortion"
 [image4]: ./writeup/hls_s.png "HLS-S"
-[image5]: ./writeup/polyfit.png "Polyfit"
+[image5]: ./writeup/polyfit_rgb_r.png "Polyfit"
 [image6]: ./writeup/lane_detection.png "Output"
+[image7]: ./writeup/rgb_r.png "RGB-R"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -52,13 +53,17 @@ Using the same distortion matrix calculated from chessboard pattern, I applied t
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-I visualized all of the test images in three colorspaces: RGB, HSV and HLS. Three channels of each are saperately visualized in 5th to 13th, a total of 9 code cells in the Jupyter notebook, to see if any, or a combination, of channels can be used to effectively filter out just the lane lines in all of the test images that represent a sufficient amount of variation in lightening conditions, required for this project. And sure enough, one could clearly see that S-Channel in the HLS colorspace works well on all the the test images, so I deciided to primarily just use that.
+I visualized all of the test images in three colorspaces: RGB, HSV and HLS. Three channels of each are saperately visualized in 5th to 13th, a total of 9 code cells in the Jupyter notebook, to see if any, or a combination, of channels can be used to effectively filter out just the lane lines in all of the test images that represent a sufficient amount of variation in lightening conditions, required for this project. And sure enough, one could clearly see that S-Channel in the HLS colorspace works well on all the the test images.
 
 Here is the result of test images in the S-Channel of HLS colorspace:
 
-![Test Image in HLS-S][image4]
+![Test Images in HLS-S][image4]
 
-I then used the minimum and maximum thresholds of the values in the HLS S-Channel to extract just the pixels on the lane lines and create the binary image.
+I could also see that with the right thresholds RGB R-channel could also provide the relevant information sufficiently. So I took note of that but proceeded with the pipeline using HLS S-Channel. On the final video though, the results weren't too promising so I decided to test out RGB R-Channel instead. This worked out really well. By applying just few further constraints in the pipeline, just the RGB R-Channel filtering produced the desired result in the end. Here is how RGB R-Channel looked on the test images:
+
+![Test Images in RGB-R][image7]
+
+I then used the minimum and maximum thresholds of the values in the RGB R-Channel to extract just the pixels on the lane lines and create the binary image.
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -89,7 +94,7 @@ dest = np.float32([bottom_left_dst, bottom_right_dst, top_left_dst, top_right_ds
 
 In my pipeline, I created the binary images from the images that were first applied the percpective transform to get the bird-eye view.
 
-In order to fit the polynomial onto the lane lines, I first filtered out the noise from the sides and top by cropping the binary image 25% from each side and 40% from the top. I then applied the histogram onto the cropped image to identify the peaks of pixel density to be used as the starting points for the left and right lanes to apply polyfit. From these starting points, I propagate up the binary image in the windowed manner, with a total of 10 windows each for left and right lanes. In each window I identify the pixels belonging to the lane. After finding the location of the lane in each of the windows, I use those points to polyfit the line onto the binary image for each of the left and right lane. The result on the test images was as follows:
+In order to fit the polynomial onto the lane lines, I first filtered out the noise from the sides and top by cropping the binary image 25% from each side and 60% from the top. I then applied the histogram onto the cropped image to identify the peaks of pixel density to be used as the starting points for the left and right lanes to apply polyfit. From these starting points, I propagate up the binary image in the windowed manner, with a total of 10 windows each for left and right lanes. In each window I identify the pixels belonging to the lane. After finding the location of the lane in each of the windows, I use those points to polyfit the line onto the binary image for each of the left and right lane. The result on the test images was as follows:
 
 ![Polyfit][image5]
 
@@ -117,4 +122,4 @@ Here's a [link to my video result](./project_video_result.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-The pipeline is performing reasonably well on the given video. But it can be seen that it is still a little wobbly and not perfect. I am, for the most part, leveraging only the HLS S-channnel information. So it is probably advisable to use other colospace and gradient-based filtering in combination to make the results more robust. The whole pipeline heavily relies on a single viewing perspective. So it would immediately fail if the camera angle or placement is changes a little. Furthermore, the whole processing is being done frame by frame. It is probably advisable to leverage information from the previous frames as well for a robust output and to have some corrective reference for the frames not well processed.
+The pipeline is performing reasonably well on the given video. But it can be seen that it is still a little wobbly and not perfect. I am, for the most part, leveraging only the RGB R-channnel information. So it is probably advisable to use other colospace and gradient-based filtering in combination to make the results more robust. The whole pipeline heavily relies on a single viewing perspective. So it would immediately fail if the camera angle or placement is changes a little. 
